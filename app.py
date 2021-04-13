@@ -36,13 +36,9 @@ def welcome():
 def prcp():
     # Create our session (link) from Python to the DB
 
-    """Return a list of all passenger names"""
-    # Query all passengers
     query_date = dt.date(2017, 8, 23) - dt.timedelta(days=365)
     results = session.query(Measurement.date, Measurement.prcp).filter(Measurement.date >= query_date).all()
 
-    # Convert list of tuples into normal list
-    # all_names = list(np.ravel(results))
     p_list = []
     for x , y in results:
         p_dict = {}
@@ -52,27 +48,39 @@ def prcp():
     return jsonify(p_list)
 
 
-@app.route("/api/v1.0/passengers")
-def passengers():
+@app.route("/api/v1.0/stations")
+def stations():
     # Create our session (link) from Python to the DB
-    session = Session(engine)
+    
+    stations = session.query(Measurement.station).group_by(Measurement.station).all()
 
-    """Return a list of passenger data including the name, age, and sex of each passenger"""
-    # Query all passengers
-    results = session.query(Passenger.name, Passenger.age, Passenger.sex).all()
+    # Return a JSON list of stations from the dataset.
+    all_stations = []
+    for station in stations:
+        station_dict = {}
+        station_dict["station"] = station
+        all_stations.append(station_dict)
 
-    session.close()
+    return jsonify(all_stations)
 
-    # Create a dictionary from the row data and append to a list of all_passengers
-    all_passengers = []
-    for name, age, sex in results:
-        passenger_dict = {}
-        passenger_dict["name"] = name
-        passenger_dict["age"] = age
-        passenger_dict["sex"] = sex
-        all_passengers.append(passenger_dict)
+@app.route("/api/v1.0/tobs")
+def tobs():
+    # Create our session (link) from Python to the DB
+    
+    temp_results = session.query(Measurement.station, func.count(Measurement.station)).\
+        group_by(Measurement.station).\
+        order_by(func.count(Measurement.station).desc()).all()
 
-    return jsonify(all_passengers)
+    # Return a JSON list of temperature observations (TOBS) for the previous year.
+
+    temp_list = []
+    for temps in temp_results:
+        temps_dict = {}
+        temps_dict["station"] = station
+        temps_dict["tobs"] = temperatures
+        temp_list.append(temps_dict)
+
+    return jsonify(temp_list)
 
 
 if __name__ == '__main__':
